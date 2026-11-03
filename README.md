@@ -1,3 +1,5 @@
+![CI](https://github.com/maiaramacedors/opstrack-apii/actions/workflows/ci.yml/badge.svg)
+
 # OpsTrack API
 
 A OpsTrack API é uma API em Python com Flask para acompanhamento de chamados (tickets) de suporte técnico. Ela informa se o serviço está online e lista os chamados e os usuários cadastrados. Projeto da disciplina de Integração e Entrega Contínua (ISW-032 — Fatec).
