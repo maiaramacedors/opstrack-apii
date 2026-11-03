@@ -10,7 +10,7 @@ def index():
 
 @app.route("/status")
 def status():
-    return {"status": "oks"}
+    return {"status": "ok"}
 
 
 @app.route("/version")
