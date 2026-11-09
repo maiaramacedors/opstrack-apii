@@ -29,18 +29,17 @@ jobs:
       - name: Testes e cobertura (pytest)
         run: pytest --cov=app --cov-report=term-missing --cov-fail-under=85
 
-        docker:
-          name: docker
-          needs: test
-          runs-on: ubuntu-latest
-          steps:
-            - name: Baixar o codigo
-              uses: actions/checkout@v4
-            - name: Construir imagem
-              run: docker build -t opstrack-apii:ci .
-            - name: Subir o container e testar o /status
-              run: |
-                docker run -d --name api -p 8000:8000 opstrack-apii:ci
-                sleep 5
-                curl --fail http://localhost:8000/status
-                
+  docker:
+    name: docker
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o codigo
+        uses: actions/checkout@v4
+      - name: Construir imagem
+        run: docker build -t opstrack-apii:ci .
+      - name: Subir o container e testar o /status
+        run: |
+          docker run -d --name api -p 8000:8000 opstrack-apii:ci
+          sleep 5
+          curl --fail http://localhost:8000/status
