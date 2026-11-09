@@ -15,6 +15,7 @@ Antes de começar, tenha instalado na sua máquina:
 - **Python 3.12** ou superior — confira com `python --version`
 - **Git** — confira com `git --version`
 - Acesso à internet (o pre-commit baixa o flake8 no primeiro commit)
+- **Docker** (opcional), só para rodar a API em container — veja a seção 7. No GitHub Codespaces ele já vem instalado
 
 ---
 
@@ -307,3 +308,72 @@ Use prefixos nas mensagens: `feat:` (nova funcionalidade), `fix:` (correção), 
 - Não use `git commit --no-verify` para pular o hook, exceto em emergência.
 - Não gere o `requirements.txt` com `pip freeze`: ele passaria a incluir o flake8, o pre-commit, o pytest e as dependências deles. Ferramentas de desenvolvimento vão no `requirements-dev.txt`.
 - Toda rota nova deve vir com pelo menos um teste em `tests/test_api.py`, para a cobertura não cair abaixo da meta.
+
+---
+
+## 7. Rodando com Docker
+
+O projeto tem um `Dockerfile` que empacota a API com o Python 3.12 e o servidor de produção **gunicorn**. Com isso, ela roda do mesmo jeito em qualquer máquina com Docker, sem precisar criar o ambiente virtual.
+
+### Construir a imagem
+
+Na raiz do projeto (onde está o `Dockerfile`):
+
+```bash
+docker build -t opstrack-api:0.1.0 .
+```
+
+O ponto no final indica a pasta atual, que é de onde o Docker lê os arquivos. O `.dockerignore` deixa de fora o que não é necessário na imagem, como `venv`, `.git` e `tests`.
+
+### Rodar o container
+
+```bash
+docker run -d --name opstrack -p 8000:8000 opstrack-api:0.1.0
+```
+
+- `-d`: roda o container em segundo plano
+- `--name opstrack`: dá o nome `opstrack` ao container
+- `-p 8000:8000`: liga a porta 8000 da sua máquina à porta 8000 do container, onde o gunicorn escuta
+
+### Acessar a API
+
+A API fica disponível em `http://localhost:8000`. No GitHub Codespaces, abra a aba **Ports**, procure a porta **8000** e clique no ícone de abrir no navegador.
+
+```bash
+curl localhost:8000/status
+```
+
+Resposta esperada:
+
+```
+{"status":"ok"}
+```
+
+### Conferir o container
+
+```bash
+docker ps
+docker logs opstrack
+```
+
+Depois de cerca de 30 segundos, o `docker ps` mostra o container como **(healthy)**: o healthcheck do `Dockerfile` chama a rota `/status` a cada 30 segundos. O processo roda com o usuário `appuser`, e não como root.
+
+### Parar e remover o container
+
+```bash
+docker stop opstrack
+docker rm opstrack
+```
+
+Ou, em um comando só: `docker rm -f opstrack`.
+
+### Problemas comuns
+
+| Mensagem                     | Solução                                                              |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `port is already allocated`  | a porta 8000 já está em uso: use outra, por exemplo `-p 8001:8000`   |
+| `name already in use`        | já existe um container com esse nome: rode `docker rm -f opstrack`   |
+
+### A imagem na CI
+
+A pipeline (`.github/workflows/ci.yml`) tem dois jobs, `test` e `docker`. O job `docker` só roda depois que o `test` passa: ele constrói a imagem, sobe o container e chama a rota `/status`. Se a imagem não responder, a pipeline falha. Os dois checks são obrigatórios para fazer o merge na `main`.
